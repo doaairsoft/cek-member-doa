@@ -54,11 +54,10 @@
     // PENGATURAN HAK AKSES & PASSWORD
     // ==========================================
     const HAK_AKSES = {
-      "DOA@2026": "ADMIN",    // Password khusus Admin (bisa lihat semua info lengkap)
-      "MEMBER123": "USER"     // Password khusus Anggota/User Biasa (bisa disesuaikan hak aksesnya)
+      "DOA@2026": "ADMIN",    // Password khusus Admin (bisa lihat info lengkap)
+      "MEMBER123": "USER"     // Password khusus Anggota/User Biasa
     };
 
-    // Variabel untuk menyimpan status hak akses yang sedang login
     let currentRole = "";
 
     // DATABASE MEMBER
@@ -104,14 +103,12 @@
       var input = document.getElementById("passInput").value.trim();
       var errorDiv = document.getElementById("errorMsg");
       
-      // Cek apakah password terdaftar di objek HAK_AKSES
       if (HAK_AKSES.hasOwnProperty(input)) {
         currentRole = HAK_AKSES[input];
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainContent').style.display = 'block';
         errorDiv.style.display = 'none';
         
-        // Tampilkan info status hak akses di halaman utama
         document.getElementById("roleBadge").innerHTML = `Hak Akses: [ ${currentRole} ]`;
         document.getElementById("noId").focus();
       } else {
@@ -144,8 +141,6 @@
       let color = isAktiv ? "#22c55e" : "#ef4444";
       let text = isAktiv ? "AKTIF" : "EXPIRED";
 
-      // CONTOH PEMBATASAN HAK AKSES TAMPILAN:
-      // Jika login sebagai USER biasa, kita bisa sembunyikan informasi sensitif seperti NIK atau Kontak Darurat
       let detailInfo = "";
       if (currentRole === "ADMIN") {
         detailInfo = `
@@ -161,7 +156,6 @@
           <div class="label">K. DARURAT</div><div>: ${member.kontakDarurat}</div>
         `;
       } else {
-        // Tampilan khusus untuk User biasa (lebih ringkas / dibatasi)
         detailInfo = `
           <div class="label">NO ID</div><div>: ${member.noId}</div>
           <div class="label">NAMA</div><div>: ${member.nama}</div>
