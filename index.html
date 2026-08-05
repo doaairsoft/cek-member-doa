@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root { --bg: #0f172a; --card: rgba(30, 41, 59, 0.8); --accent: #38bdf8; }
+    body { background: var(--bg); color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 15px; box-sizing: border-box; }
+    .container { width: 100%; max-width: 400px; }
+    
+    /* LOGO STATIS TAPI MUAT DI HP */
+    .logo-img { width: 100%; max-width: 250px; height: auto; display: block; margin: 0 auto 20px auto; }
+    
+    input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #334155; background: #1e293b; color: white; text-align: center; box-sizing: border-box; font-size: 16px; margin-bottom: 15px; }
+    .card { background: var(--card); padding: 20px; border-radius: 20px; border: 1px solid #334155; box-shadow: 0 4px 10px rgba(0,0,0,0.3); width: 100%; box-sizing: border-box; }
+    
+    .foto-member { width: 200px; height: 200px; border-radius: 12px; object-fit: cover; border: 4px solid var(--accent); display: block; margin: 0 auto 20px auto; }
+    .badge { padding: 6px 20px; border-radius: 50px; font-weight: bold; color: white; display: inline-block; margin-bottom: 15px; font-size: 12px; }
+    .btn-reset { padding: 15px; width: 100%; cursor:pointer; background: var(--accent); border:none; border-radius: 12px; font-weight: 600; color: #0f172a; margin-top: 15px; }
+    
+    .info-grid { display: grid; grid-template-columns: 100px 1fr; gap: 8px; text-align: left; font-size: 13px; margin-top: 10px; }
+    .label { font-weight: bold; color: #94a3b8; }
+    
+    .password-container { position: relative; width: 100%; max-width: 300px; }
+    .toggle-pass { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #38bdf8; font-size: 12px; font-weight: bold; }
+    #errorMsg { color: #ef4444; margin-bottom: 15px; font-weight: bold; display: none; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <div id="loginPage" style="display:flex; flex-direction:column; align-items:center; width:100%; padding-top:40px;">
+  <img src="https://drive.google.com/thumbnail?id=1cw8B7STFAm_2dkC11fe2HEt7juoRodR2&sz=w800" class="logo-img">
+    <h2 style="margin-bottom:20px;">LOGIN D.O.A</h2>
+    <div id="errorMsg"></div>
+    <div class="password-container">
+        <input id="passInput" type="password" placeholder="Masukkan Password...">
+        <span class="toggle-pass" onclick="togglePassword()">LIHAT</span>
+    </div>
+    <button onclick="cekPassword()" class="btn-reset" style="max-width:300px;">MASUK</button>
+  </div>
+
+  <div class="container" id="mainContent" style="display:none;">
+   <img src="https://drive.google.com/thumbnail?id=1cw8B7STFAm_2dkC11fe2HEt7juoRodR2&sz=w800" class="logo-img">
+    <input id="noId" type="text" placeholder="Masukkan NO ID, tekan Enter..." autocomplete="off">
+  </div>
+  
+  <div id="hasil" class="container"></div>
+
+  <script>
+    function togglePassword() {
+      var x = document.getElementById("passInput");
+      var y = document.querySelector(".toggle-pass");
+      if (x.type === "password") { x.type = "text"; y.innerHTML = "SEMBUNYI"; }
+      else { x.type = "password"; y.innerHTML = "LIHAT"; }
+    }
+
+    function cekPassword() {
+      var input = document.getElementById("passInput").value;
+      var errorDiv = document.getElementById("errorMsg");
+      
+      google.script.run.withSuccessHandler(function(pw) {
+        if (String(input).trim() === pw) {
+          document.getElementById('loginPage').style.display = 'none';
+          document.getElementById('mainContent').style.display = 'block';
+          errorDiv.style.display = 'none';
+          document.getElementById("noId").focus();
+        } else {
+          errorDiv.style.display = 'block';
+          errorDiv.innerHTML = "❌ Password Salah! Coba lagi.";
+          document.getElementById("passInput").style.borderColor = "#ef4444";
+        }
+      }).getPassword();
+    }
+
+    document.getElementById("passInput").addEventListener("keypress", function(e) { if (e.key === "Enter") cekPassword(); });
+
+    document.getElementById("noId").addEventListener("keypress", function(e) {
+      if (e.key === "Enter") {
+        document.getElementById('mainContent').style.display = 'none';
+        google.script.run.withSuccessHandler(tampilkanHasil).getMember(this.value);
+      }
+    });
+
+    function tampilkanHasil(member) {
+      document.getElementById("hasil").innerHTML = ""; 
+      if (!member) {
+        document.getElementById("hasil").innerHTML = "<div class='card' style='text-align:center;'>❌ ID TIDAK DITEMUKAN!<br><button onclick='resetTampilan()' class='btn-reset'>CARI LAGI</button></div>";
+        return;
+      }
+      let statusRaw = String(member.status).toUpperCase();
+      let isAktiv = statusRaw.includes("AKTIV") || statusRaw.includes("AKTIF");
+      let color = isAktiv ? "#22c55e" : "#ef4444";
+      let text = isAktiv ? "AKTIV" : "EXPIRED";
+
+      document.getElementById("hasil").innerHTML = `
+        <div class='card' style="text-align:center;">
+          <img src="${member.foto}" class="foto-member" onerror="this.src='https://placehold.co/200x200?text=No+Photo'">
+          <h3>${member.nama}</h3>
+          <div class="badge" style="background:${color}">${text}</div>
+          <div class="info-grid">
+            <div class="label">NO ID</div><div>: ${member.noId}</div>
+            <div class="label">NO INDUK</div><div>: ${member.noAnggota}</div>
+            <div class="label">NAMA</div><div>: ${member.nama}</div>
+            <div class="label">ALAMAT</div><div>: ${member.alamat}</div>
+            <div class="label">NIK</div><div>: ${member.nik}</div>
+            <div class="label">BERGABUNG</div><div>: ${member.tglGabung}</div>
+            <div class="label">EXPIRED</div><div>: ${member.expired}</div>
+            <div class="label">CLUB</div><div>: ${member.club}</div>
+            <div class="label">KONTAK</div><div>: ${member.kontakPribadi}</div>
+            <div class="label">K. DARURAT</div><div>: ${member.kontakDarurat}</div>
+          </div>
+          <button onclick='resetTampilan()' class='btn-reset'>CARI LAGI</button>
+        </div>`;
+    }
+
+    function resetTampilan() {
+      document.getElementById("hasil").innerHTML = "";
+      document.getElementById("mainContent").style.display = 'block';
+      const inputEl = document.getElementById("noId");
+      inputEl.value = "";
+      inputEl.focus();
+    }
+  </script>
+</body>
+</html>
