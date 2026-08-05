@@ -24,6 +24,7 @@
     .toggle-pass { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #38bdf8; font-size: 12px; font-weight: bold; }
     #errorMsg { color: #ef4444; margin-bottom: 15px; font-weight: bold; display: none; text-align: center; }
     .role-info { font-size: 12px; color: #38bdf8; margin-bottom: 15px; font-weight: bold; }
+    #loadingMsg { color: #38bdf8; margin-bottom: 15px; font-weight: bold; text-align: center; }
   </style>
 </head>
 <body>
@@ -32,6 +33,7 @@
   <div id="loginPage" style="display:flex; flex-direction:column; align-items:center; width:100%; padding-top:30px;">
     <img src="https://drive.google.com/thumbnail?id=1cw8B7STFAm_2dkC11fe2HEt7juoRodR2&sz=w800" class="logo-img">
     <h2 style="margin-bottom:10px;">LOGIN D.O.A</h2>
+    <div id="loadingMsg">Memuat data dari Spreadsheet...</div>
     <div id="errorMsg"></div>
     
     <div style="width: 100%; max-width: 300px;">
@@ -57,6 +59,11 @@
   <div id="hasil" class="container"></div>
 
   <script>
+    // URL Web App Google Apps Script Anda
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyPwMoopQMW5jgGQiKDn76J1XBYrWK2k4KXB4s6qpnAJjVT3IW5R-2A2-lvBx3JxiFt/exec";
+
+    let databaseMember = [];
+
     // ==========================================
     // PENGATURAN USERNAME, PASSWORD & HAK AKSES
     // ==========================================
@@ -65,43 +72,26 @@
       "admin": { pass: "DOA@2026", role: "ADMIN" },
 
       // Format User / Anggota (Username, Password, dan terikat ke noIdTarget miliknya)
-      "budi": { pass: "12345", role: "USER", noIdTarget: "001" },
-      "siti": { pass: "abcde", role: "USER", noIdTarget: "002" }
+      "budi": { pass: "12345", role: "USER", noIdTarget: "DOA-301" },
+      "siti": { pass: "abcde", role: "USER", noIdTarget: "DOA-302" }
     };
 
     let currentUser = null;
 
-    // DATABASE MEMBER
-    const databaseMember = [
-      {
-        noId: "001",
-        noAnggota: "IND-001",
-        nama: "Budi Santoso",
-        alamat: "Jl. Merdeka No. 10, Jakarta",
-        nik: "3171012345670001",
-        tglGabung: "01-01-2023",
-        expired: "01-01-2027",
-        club: "DOA Airsoft Club",
-        kontakPribadi: "081234567890",
-        kontakDarurat: "089876543210 (Istri)",
-        status: "AKTIF",
-        foto: "https://placehold.co/200x200?text=Budi"
-      },
-      {
-        noId: "002",
-        noAnggota: "IND-002",
-        nama: "Siti Rahma",
-        alamat: "Jl. Sudirman No. 45, Bandung",
-        nik: "3273019876540002",
-        tglGabung: "15-05-2023",
-        expired: "15-05-2024",
-        club: "DOA Airsoft Club",
-        kontakPribadi: "085678901234",
-        kontakDarurat: "081122334455 (Ayah)",
-        status: "EXPIRED",
-        foto: "https://placehold.co/200x200?text=Siti"
+    // Fungsi untuk mengambil data dari Google Spreadsheet secara otomatis
+    async function muatDataMember() {
+      try {
+        let response = await fetch(SCRIPT_URL);
+        databaseMember = await response.json();
+        document.getElementById("loadingMsg").style.display = "none";
+      } catch (error) {
+        console.error("Gagal memuat data:", error);
+        document.getElementById("loadingMsg").innerHTML = "❌ Gagal memuat data dari Spreadsheet!";
       }
-    ];
+    }
+
+    // Panggil fungsi saat halaman pertama kali dibuka
+    muatDataMember();
 
     function togglePassword() {
       var x = document.getElementById("passInput");
@@ -115,7 +105,6 @@
       var passwordInput = document.getElementById("passInput").value.trim();
       var errorDiv = document.getElementById("errorMsg");
       
-      // Cek apakah username terdaftar dan passwordnya cocok
       if (AKUN_PENGGUNA.hasOwnProperty(usernameInput) && AKUN_PENGGUNA[usernameInput].pass === passwordInput) {
         currentUser = AKUN_PENGGUNA[usernameInput];
         document.getElementById('loginPage').style.display = 'none';
@@ -126,7 +115,7 @@
           document.getElementById("roleBadge").innerHTML = `Hak Akses: [ ADMIN ]`;
           document.getElementById("noId").focus();
         } else {
-          let memberData = databaseMember.find(m => m.noId === currentUser.noIdTarget);
+          let memberData = databaseMember.find(m => String(m.noId).trim().toUpperCase() === String(currentUser.noIdTarget).trim().toUpperCase());
           tampilkanHasil(memberData);
         }
       } else {
@@ -145,7 +134,7 @@
         let keyword = this.value.trim();
         document.getElementById('mainContent').style.display = 'none';
         
-        let hasilPencarian = databaseMember.find(m => m.noId.toLowerCase() === keyword.toLowerCase());
+        let hasilPencarian = databaseMember.find(m => String(m.noId).trim().toLowerCase() === keyword.toLowerCase());
         tampilkanHasil(hasilPencarian);
       }
     });
@@ -164,30 +153,30 @@
       let detailInfo = "";
       if (currentUser && currentUser.role === "ADMIN") {
         detailInfo = `
-          <div class="label">NO ID</div><div>: ${member.noId}</div>
-          <div class="label">NO INDUK</div><div>: ${member.noAnggota}</div>
-          <div class="label">NAMA</div><div>: ${member.nama}</div>
-          <div class="label">ALAMAT</div><div>: ${member.alamat}</div>
-          <div class="label">NIK</div><div>: ${member.nik}</div>
-          <div class="label">BERGABUNG</div><div>: ${member.tglGabung}</div>
-          <div class="label">EXPIRED</div><div>: ${member.expired}</div>
-          <div class="label">CLUB</div><div>: ${member.club}</div>
-          <div class="label">KONTAK</div><div>: ${member.kontakPribadi}</div>
-          <div class="label">K. DARURAT</div><div>: ${member.kontakDarurat}</div>
+          <div class="label">NO ID</div><div>: ${member.noId || ''}</div>
+          <div class="label">NO INDUK</div><div>: ${member.noAnggota || ''}</div>
+          <div class="label">NAMA</div><div>: ${member.nama || ''}</div>
+          <div class="label">ALAMAT</div><div>: ${member.alamat || ''}</div>
+          <div class="label">NIK</div><div>: ${member.nik || ''}</div>
+          <div class="label">BERGABUNG</div><div>: ${member.tglGabung || ''}</div>
+          <div class="label">EXPIRED</div><div>: ${member.expired || ''}</div>
+          <div class="label">CLUB</div><div>: ${member.club || ''}</div>
+          <div class="label">KONTAK</div><div>: ${member.kontakPribadi || ''}</div>
+          <div class="label">K. DARURAT</div><div>: ${member.kontakDarurat || ''}</div>
         `;
       } else {
         detailInfo = `
-          <div class="label">NO ID</div><div>: ${member.noId}</div>
-          <div class="label">NAMA</div><div>: ${member.nama}</div>
-          <div class="label">CLUB</div><div>: ${member.club}</div>
-          <div class="label">EXPIRED</div><div>: ${member.expired}</div>
+          <div class="label">NO ID</div><div>: ${member.noId || ''}</div>
+          <div class="label">NAMA</div><div>: ${member.nama || ''}</div>
+          <div class="label">CLUB</div><div>: ${member.club || ''}</div>
+          <div class="label">EXPIRED</div><div>: ${member.expired || ''}</div>
         `;
       }
 
       document.getElementById("hasil").innerHTML = `
         <div class='card' style="text-align:center;">
-          <img src="${member.foto}" class="foto-member" onerror="this.src='https://placehold.co/200x200?text=No+Photo'">
-          <h3>${member.nama}</h3>
+          <img src="${member.foto || ''}" class="foto-member" onerror="this.src='https://placehold.co/200x200?text=No+Photo'">
+          <h3>${member.nama || ''}</h3>
           <div class="badge" style="background:${color}">${text}</div>
           <div class="info-grid">
             ${detailInfo}
