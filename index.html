@@ -1,14 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <base target="_top">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>D.O.A Verification System</title>
   <style>
     :root { --bg: #0f172a; --card: rgba(30, 41, 59, 0.8); --accent: #38bdf8; }
     body { background: var(--bg); color: #fff; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 15px; box-sizing: border-box; }
     .container { width: 100%; max-width: 400px; }
     
-    /* LOGO STATIS TAPI MUAT DI HP */
     .logo-img { width: 100%; max-width: 250px; height: auto; display: block; margin: 0 auto 20px auto; }
     
     input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid #334155; background: #1e293b; color: white; text-align: center; box-sizing: border-box; font-size: 16px; margin-bottom: 15px; }
@@ -28,8 +27,9 @@
 </head>
 <body>
 
+  <!-- HALAMAN LOGIN -->
   <div id="loginPage" style="display:flex; flex-direction:column; align-items:center; width:100%; padding-top:40px;">
-  <img src="https://drive.google.com/thumbnail?id=1cw8B7STFAm_2dkC11fe2HEt7juoRodR2&sz=w800" class="logo-img">
+    <img src="https://drive.google.com/thumbnail?id=1cw8B7STFAm_2dkC11fe2HEt7juoRodR2&sz=w800" class="logo-img">
     <h2 style="margin-bottom:20px;">LOGIN D.O.A</h2>
     <div id="errorMsg"></div>
     <div class="password-container">
@@ -39,14 +39,50 @@
     <button onclick="cekPassword()" class="btn-reset" style="max-width:300px;">MASUK</button>
   </div>
 
+  <!-- HALAMAN UTAMA / PENCARIAN -->
   <div class="container" id="mainContent" style="display:none;">
-   <img src="https://drive.google.com/thumbnail?id=1cw8B7STFAm_2dkC11fe2HEt7juoRodR2&sz=w800" class="logo-img">
+    <img src="https://drive.google.com/thumbnail?id=1cw8B7STFAm_2dkC11fe2HEt7juoRodR2&sz=w800" class="logo-img">
     <input id="noId" type="text" placeholder="Masukkan NO ID, tekan Enter..." autocomplete="off">
   </div>
   
   <div id="hasil" class="container"></div>
 
   <script>
+    // 1. ATUR PASSWORD ANDA DI SINI
+    const ADMIN_PASSWORD = "123"; 
+
+    // 2. DATABASE MEMBER (Tambahkan data member Anda di dalam kurung siku ini)
+    const databaseMember = [
+      {
+        noId: "001",
+        noAnggota: "IND-001",
+        nama: "Budi Santoso",
+        alamat: "Jl. Merdeka No. 10, Jakarta",
+        nik: "3171012345670001",
+        tglGabung: "01-01-2023",
+        expired: "01-01-2027",
+        club: "DOA Airsoft Club",
+        kontakPribadi: "081234567890",
+        kontakDarurat: "089876543210 (Istri)",
+        status: "AKTIF",
+        foto: "https://placehold.co/200x200?text=Budi"
+      },
+      {
+        noId: "002",
+        noAnggota: "IND-002",
+        nama: "Siti Rahma",
+        alamat: "Jl. Sudirman No. 45, Bandung",
+        nik: "3273019876540002",
+        tglGabung: "15-05-2023",
+        expired: "15-05-2024",
+        club: "DOA Airsoft Club",
+        kontakPribadi: "085678901234",
+        kontakDarurat: "081122334455 (Ayah)",
+        status: "EXPIRED",
+        foto: "https://placehold.co/200x200?text=Siti"
+      }
+    ];
+
     function togglePassword() {
       var x = document.getElementById("passInput");
       var y = document.querySelector(".toggle-pass");
@@ -58,26 +94,28 @@
       var input = document.getElementById("passInput").value;
       var errorDiv = document.getElementById("errorMsg");
       
-      google.script.run.withSuccessHandler(function(pw) {
-        if (String(input).trim() === pw) {
-          document.getElementById('loginPage').style.display = 'none';
-          document.getElementById('mainContent').style.display = 'block';
-          errorDiv.style.display = 'none';
-          document.getElementById("noId").focus();
-        } else {
-          errorDiv.style.display = 'block';
-          errorDiv.innerHTML = "❌ Password Salah! Coba lagi.";
-          document.getElementById("passInput").style.borderColor = "#ef4444";
-        }
-      }).getPassword();
+      if (String(input).trim() === ADMIN_PASSWORD) {
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('mainContent').style.display = 'block';
+        errorDiv.style.display = 'none';
+        document.getElementById("noId").focus();
+      } else {
+        errorDiv.style.display = 'block';
+        errorDiv.innerHTML = "❌ Password Salah! Coba lagi.";
+        document.getElementById("passInput").style.borderColor = "#ef4444";
+      }
     }
 
     document.getElementById("passInput").addEventListener("keypress", function(e) { if (e.key === "Enter") cekPassword(); });
 
     document.getElementById("noId").addEventListener("keypress", function(e) {
       if (e.key === "Enter") {
+        let keyword = this.value.trim();
         document.getElementById('mainContent').style.display = 'none';
-        google.script.run.withSuccessHandler(tampilkanHasil).getMember(this.value);
+        
+        // Cari data berdasarkan noId
+        let hasilPencarian = databaseMember.find(m => m.noId.toLowerCase() === keyword.toLowerCase());
+        tampilkanHasil(hasilPencarian);
       }
     });
 
@@ -90,7 +128,7 @@
       let statusRaw = String(member.status).toUpperCase();
       let isAktiv = statusRaw.includes("AKTIV") || statusRaw.includes("AKTIF");
       let color = isAktiv ? "#22c55e" : "#ef4444";
-      let text = isAktiv ? "AKTIV" : "EXPIRED";
+      let text = isAktiv ? "AKTIF" : "EXPIRED";
 
       document.getElementById("hasil").innerHTML = `
         <div class='card' style="text-align:center;">
