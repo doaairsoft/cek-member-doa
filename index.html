@@ -9,8 +9,6 @@
     .container { width: 100%; max-width: 400px; }
     .container-wide { width: 100%; max-width: 1000px; }
     
-    .logo-img { width: 100%; max-width: 220px; height: auto; display: block; margin: 0 auto 15px auto; }
-    
     input, select { width: 100%; padding: 12px 15px; border-radius: 12px; border: 1px solid #334155; background: #1e293b; color: white; box-sizing: border-box; font-size: 15px; margin-bottom: 12px; }
     input { text-align: center; }
     .card { background: var(--card); padding: 25px; border-radius: 20px; border: 1px solid #334155; box-shadow: 0 4px 15px rgba(0,0,0,0.5); width: 100%; box-sizing: border-box; }
@@ -22,7 +20,7 @@
     #errorMsg { color: var(--red); margin-bottom: 15px; font-weight: bold; display: none; text-align: center; font-size: 14px; }
     #loadingMsg { color: #38bdf8; margin-bottom: 15px; font-weight: bold; text-align: center; font-size: 14px; }
 
-    /* Styling Tabel & Header Admin ala Gambar Anda */
+    /* Styling Tabel & Header Admin */
     .header-title { color: var(--red); font-size: 22px; font-weight: bold; text-align: center; margin-bottom: 20px; letter-spacing: 0.5px; }
     .table-container { width: 100%; overflow-x: auto; margin-top: 15px; border-radius: 12px; border: 1px solid #334155; }
     table { width: 100%; border-collapse: collapse; background: #161e2e; font-size: 13px; }
@@ -41,7 +39,7 @@
   <div id="loginPage" style="display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; flex:1;">
     <div class="card" style="max-width: 380px;">
       <h2 style="text-align:center; margin-top:0; color:var(--accent); margin-bottom:20px;">LOGIN D.O.A</h2>
-      <div id="loadingMsg">Memuat data sistem...</div>
+      <div id="loadingMsg">Memuat data sistem dari Spreadsheet...</div>
       <div id="errorMsg"></div>
       
       <input id="userInput" type="text" placeholder="Masukkan Username..." autocomplete="off">
@@ -58,6 +56,7 @@
   <!-- 2. HALAMAN UTAMA TABEL MEMBER SETELAH LOGIN -->
   <div class="container-wide" id="mainContent" style="display:none; padding-top: 10px;">
     <div class="header-title">D.O.A Airsoft - Verifikasi Member</div>
+    <div id="roleInfo" style="text-align:center; color:#38bdf8; font-size:13px; margin-bottom:15px; font-weight:bold;"></div>
     
     <div class="admin-actions">
       <input id="noId" type="text" placeholder="Cari berdasarkan No. ID atau Nama..." autocomplete="off" style="flex: 1; margin-bottom:0; background:#161e2e;">
@@ -81,21 +80,32 @@
   </div>
 
   <script>
-    // URL Web App terbaru yang aktif & publik
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzgUupPVpwuh_qIqrNEmj_shlvU8mw5fSKhsFUUYYGzG_Eej-STBiEmW8UIZRz7k982/exec";
     let databaseMember = [];
-
-    // Konfigurasi Akun Login
-    const AKUN_PENGGUNA = {
-      "admin": { pass: "DOA@2026", role: "ADMIN" }
-    };
-
+    let daftarAkunSetting = {}; // Menyimpan data user & password dari sheet SETTING
     let currentUser = null;
 
-    async function muatDataMember() {
+    async function muatDataSistem() {
       try {
         let response = await fetch(SCRIPT_URL);
-        databaseMember = await response.json();
+        let hasil = await response.json();
+        
+        // Asumsi data dari Apps Script berupa objek { member: [...], setting: [...] }
+        // Atau jika skrip Anda langsung array member dan array setting terpisah:
+        databaseMember = hasil.member || hasil; 
+        
+        // Memproses data setting login dari spreadsheet
+        let rawSetting = hasil.setting || [];
+        rawSetting.forEach(item => {
+          if(item.username) {
+            daftarAkunSetting[String(item.username).trim().toLowerCase()] = {
+              pass: String(item.password).trim(),
+              role: String(item.role).trim().toUpperCase(),
+              noIdTarget: item.noIdTarget || ""
+            };
+          }
+        });
+
         let loadMsg = document.getElementById("loadingMsg");
         if (loadMsg) loadMsg.style.display = "none";
       } catch (error) {
@@ -105,7 +115,7 @@
       }
     }
 
-    muatDataMember();
+    muatDataSistem();
 
     function togglePassword() {
       var x = document.getElementById("passInput");
@@ -119,12 +129,20 @@
       var passwordInput = document.getElementById("passInput").value.trim();
       var errorDiv = document.getElementById("errorMsg");
       
-      if (AKUN_PENGGUNA.hasOwnProperty(usernameInput) && AKUN_PENGGUNA[usernameInput].pass === passwordInput) {
-        currentUser = AKUN_PENGGUNA[usernameInput];
+      if (daftarAkunSetting.hasOwnProperty(usernameInput) && daftarAkunSetting[usernameInput].pass === passwordInput) {
+        currentUser = daftarAkunSetting[usernameInput];
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainContent').style.display = 'block';
         errorDiv.style.display = 'none';
-        tampilkanTabelAdmin(databaseMember);
+        
+        if (currentUser.role === "ADMIN") {
+          document.getElementById('roleInfo').innerHTML = `Login sebagai: <b>ADMIN</b>`;
+          tampilkanTabelAdmin(databaseMember);
+        } else {
+          document.getElementById('roleInfo').innerHTML = `Login sebagai: <b>USER (${currentUser.noIdTarget})</b>`;
+          let filteredUser = databaseMember.filter(m => String(m.noId).trim().toUpperCase() === String(currentUser.noIdTarget).trim().toUpperCase());
+          tampilkanTabelAdmin(filteredUser);
+        }
       } else {
         errorDiv.style.display = 'block';
         errorDiv.innerHTML = "❌ Username atau Password Salah!";
@@ -139,7 +157,13 @@
     // Live search
     document.getElementById("noId").addEventListener("input", function() {
       let keyword = this.value.trim().toLowerCase();
-      let filtered = databaseMember.filter(m => 
+      let dataSource = databaseMember;
+      
+      if (currentUser && currentUser.role !== "ADMIN") {
+        dataSource = databaseMember.filter(m => String(m.noId).trim().toUpperCase() === String(currentUser.noIdTarget).trim().toUpperCase());
+      }
+
+      let filtered = dataSource.filter(m => 
         String(m.noId).toLowerCase().includes(keyword) || 
         String(m.nama).toLowerCase().includes(keyword)
       );
