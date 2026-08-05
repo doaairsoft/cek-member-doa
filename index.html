@@ -28,16 +28,22 @@
 </head>
 <body>
 
-  <!-- HALAMAN LOGIN -->
-  <div id="loginPage" style="display:flex; flex-direction:column; align-items:center; width:100%; padding-top:40px;">
+  <!-- HALAMAN LOGIN DENGAN USERNAME & PASSWORD -->
+  <div id="loginPage" style="display:flex; flex-direction:column; align-items:center; width:100%; padding-top:30px;">
     <img src="https://drive.google.com/thumbnail?id=1cw8B7STFAm_2dkC11fe2HEt7juoRodR2&sz=w800" class="logo-img">
     <h2 style="margin-bottom:10px;">LOGIN D.O.A</h2>
     <div id="errorMsg"></div>
+    
+    <div style="width: 100%; max-width: 300px;">
+        <input id="userInput" type="text" placeholder="Masukkan Username..." autocomplete="off">
+    </div>
+
     <div class="password-container">
         <input id="passInput" type="password" placeholder="Masukkan Password...">
         <span class="toggle-pass" onclick="togglePassword()">LIHAT</span>
     </div>
-    <button onclick="cekPassword()" class="btn-reset" style="max-width:300px;">MASUK</button>
+    
+    <button onclick="cekLogin()" class="btn-reset" style="max-width:300px;">MASUK</button>
   </div>
 
   <!-- HALAMAN UTAMA / PENCARIAN (KHUSUS ADMIN) -->
@@ -52,15 +58,15 @@
 
   <script>
     // ==========================================
-    // PENGATURAN PASSWORD & AKUN MEMBER
+    // PENGATURAN USERNAME, PASSWORD & HAK AKSES
     // ==========================================
     const AKUN_PENGGUNA = {
-      // Format Admin (bisa cari semua data)
-      "DOA@2026": { role: "ADMIN" },
+      // Format Admin (Username & Password)
+      "admin": { pass: "DOA@2026", role: "ADMIN" },
 
-      // Format User / Anggota (ketika login pakai password ini, langsung muncul data miliknya berdasarkan noId)
-      "passbudi01": { role: "USER", noIdTarget: "001" },
-      "passsiti02": { role: "USER", noIdTarget: "002" }
+      // Format User / Anggota (Username, Password, dan terikat ke noIdTarget miliknya)
+      "budi": { pass: "12345", role: "USER", noIdTarget: "001" },
+      "siti": { pass: "abcde", role: "USER", noIdTarget: "002" }
     };
 
     let currentUser = null;
@@ -104,33 +110,35 @@
       else { x.type = "password"; y.innerHTML = "LIHAT"; }
     }
 
-    function cekPassword() {
-      var input = document.getElementById("passInput").value.trim();
+    function cekLogin() {
+      var usernameInput = document.getElementById("userInput").value.trim().toLowerCase();
+      var passwordInput = document.getElementById("passInput").value.trim();
       var errorDiv = document.getElementById("errorMsg");
       
-      if (AKUN_PENGGUNA.hasOwnProperty(input)) {
-        currentUser = AKUN_PENGGUNA[input];
+      // Cek apakah username terdaftar dan passwordnya cocok
+      if (AKUN_PENGGUNA.hasOwnProperty(usernameInput) && AKUN_PENGGUNA[usernameInput].pass === passwordInput) {
+        currentUser = AKUN_PENGGUNA[usernameInput];
         document.getElementById('loginPage').style.display = 'none';
         errorDiv.style.display = 'none';
         
         if (currentUser.role === "ADMIN") {
-          // Jika Admin, tampilkan menu pencarian bebas
           document.getElementById('mainContent').style.display = 'block';
           document.getElementById("roleBadge").innerHTML = `Hak Akses: [ ADMIN ]`;
           document.getElementById("noId").focus();
         } else {
-          // Jika User biasa, langsung tampilkan datanya sendiri secara otomatis
           let memberData = databaseMember.find(m => m.noId === currentUser.noIdTarget);
           tampilkanHasil(memberData);
         }
       } else {
         errorDiv.style.display = 'block';
-        errorDiv.innerHTML = "❌ Password Salah! Coba lagi.";
+        errorDiv.innerHTML = "❌ Username atau Password Salah!";
         document.getElementById("passInput").style.borderColor = "#ef4444";
+        document.getElementById("userInput").style.borderColor = "#ef4444";
       }
     }
 
-    document.getElementById("passInput").addEventListener("keypress", function(e) { if (e.key === "Enter") cekPassword(); });
+    document.getElementById("passInput").addEventListener("keypress", function(e) { if (e.key === "Enter") cekLogin(); });
+    document.getElementById("userInput").addEventListener("keypress", function(e) { if (e.key === "Enter") document.getElementById("passInput").focus(); });
 
     document.getElementById("noId").addEventListener("keypress", function(e) {
       if (e.key === "Enter") {
@@ -155,7 +163,6 @@
 
       let detailInfo = "";
       if (currentUser && currentUser.role === "ADMIN") {
-        // Info lengkap untuk Admin
         detailInfo = `
           <div class="label">NO ID</div><div>: ${member.noId}</div>
           <div class="label">NO INDUK</div><div>: ${member.noAnggota}</div>
@@ -169,7 +176,6 @@
           <div class="label">K. DARURAT</div><div>: ${member.kontakDarurat}</div>
         `;
       } else {
-        // Info ringkas untuk User mandiri
         detailInfo = `
           <div class="label">NO ID</div><div>: ${member.noId}</div>
           <div class="label">NAMA</div><div>: ${member.nama}</div>
@@ -198,10 +204,10 @@
         inputEl.value = "";
         inputEl.focus();
       } else {
-        // Jika user biasa, kembalikan ke halaman login
         document.getElementById('loginPage').style.display = 'flex';
+        document.getElementById('userInput').value = "";
         document.getElementById('passInput').value = "";
-        document.getElementById('passInput').focus();
+        document.getElementById('userInput').focus();
         currentUser = null;
       }
     }
