@@ -23,6 +23,7 @@
     .password-container { position: relative; width: 100%; max-width: 300px; }
     .toggle-pass { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #38bdf8; font-size: 12px; font-weight: bold; }
     #errorMsg { color: #ef4444; margin-bottom: 15px; font-weight: bold; display: none; text-align: center; }
+    .role-info { font-size: 12px; color: #38bdf8; margin-bottom: 15px; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -30,7 +31,7 @@
   <!-- HALAMAN LOGIN -->
   <div id="loginPage" style="display:flex; flex-direction:column; align-items:center; width:100%; padding-top:40px;">
     <img src="https://drive.google.com/thumbnail?id=1cw8B7STFAm_2dkC11fe2HEt7juoRodR2&sz=w800" class="logo-img">
-    <h2 style="margin-bottom:20px;">LOGIN D.O.A</h2>
+    <h2 style="margin-bottom:10px;">LOGIN D.O.A</h2>
     <div id="errorMsg"></div>
     <div class="password-container">
         <input id="passInput" type="password" placeholder="Masukkan Password...">
@@ -42,16 +43,25 @@
   <!-- HALAMAN UTAMA / PENCARIAN -->
   <div class="container" id="mainContent" style="display:none;">
     <img src="https://drive.google.com/thumbnail?id=1cw8B7STFAm_2dkC11fe2HEt7juoRodR2&sz=w800" class="logo-img">
+    <div id="roleBadge" class="role-info" style="text-align: center;"></div>
     <input id="noId" type="text" placeholder="Masukkan NO ID, tekan Enter..." autocomplete="off">
   </div>
   
   <div id="hasil" class="container"></div>
 
   <script>
-    // 1. ATUR PASSWORD ANDA DI SINI
-    const ADMIN_PASSWORD = "123"; 
+    // ==========================================
+    // PENGATURAN HAK AKSES & PASSWORD
+    // ==========================================
+    const HAK_AKSES = {
+      "DOA@2026": "ADMIN",    // Password khusus Admin (bisa lihat semua info lengkap)
+      "MEMBER123": "USER"     // Password khusus Anggota/User Biasa (bisa disesuaikan hak aksesnya)
+    };
 
-    // 2. DATABASE MEMBER (Tambahkan data member Anda di dalam kurung siku ini)
+    // Variabel untuk menyimpan status hak akses yang sedang login
+    let currentRole = "";
+
+    // DATABASE MEMBER
     const databaseMember = [
       {
         noId: "001",
@@ -91,13 +101,18 @@
     }
 
     function cekPassword() {
-      var input = document.getElementById("passInput").value;
+      var input = document.getElementById("passInput").value.trim();
       var errorDiv = document.getElementById("errorMsg");
       
-      if (String(input).trim() === ADMIN_PASSWORD) {
+      // Cek apakah password terdaftar di objek HAK_AKSES
+      if (HAK_AKSES.hasOwnProperty(input)) {
+        currentRole = HAK_AKSES[input];
         document.getElementById('loginPage').style.display = 'none';
         document.getElementById('mainContent').style.display = 'block';
         errorDiv.style.display = 'none';
+        
+        // Tampilkan info status hak akses di halaman utama
+        document.getElementById("roleBadge").innerHTML = `Hak Akses: [ ${currentRole} ]`;
         document.getElementById("noId").focus();
       } else {
         errorDiv.style.display = 'block';
@@ -113,7 +128,6 @@
         let keyword = this.value.trim();
         document.getElementById('mainContent').style.display = 'none';
         
-        // Cari data berdasarkan noId
         let hasilPencarian = databaseMember.find(m => m.noId.toLowerCase() === keyword.toLowerCase());
         tampilkanHasil(hasilPencarian);
       }
@@ -130,22 +144,39 @@
       let color = isAktiv ? "#22c55e" : "#ef4444";
       let text = isAktiv ? "AKTIF" : "EXPIRED";
 
+      // CONTOH PEMBATASAN HAK AKSES TAMPILAN:
+      // Jika login sebagai USER biasa, kita bisa sembunyikan informasi sensitif seperti NIK atau Kontak Darurat
+      let detailInfo = "";
+      if (currentRole === "ADMIN") {
+        detailInfo = `
+          <div class="label">NO ID</div><div>: ${member.noId}</div>
+          <div class="label">NO INDUK</div><div>: ${member.noAnggota}</div>
+          <div class="label">NAMA</div><div>: ${member.nama}</div>
+          <div class="label">ALAMAT</div><div>: ${member.alamat}</div>
+          <div class="label">NIK</div><div>: ${member.nik}</div>
+          <div class="label">BERGABUNG</div><div>: ${member.tglGabung}</div>
+          <div class="label">EXPIRED</div><div>: ${member.expired}</div>
+          <div class="label">CLUB</div><div>: ${member.club}</div>
+          <div class="label">KONTAK</div><div>: ${member.kontakPribadi}</div>
+          <div class="label">K. DARURAT</div><div>: ${member.kontakDarurat}</div>
+        `;
+      } else {
+        // Tampilan khusus untuk User biasa (lebih ringkas / dibatasi)
+        detailInfo = `
+          <div class="label">NO ID</div><div>: ${member.noId}</div>
+          <div class="label">NAMA</div><div>: ${member.nama}</div>
+          <div class="label">CLUB</div><div>: ${member.club}</div>
+          <div class="label">EXPIRED</div><div>: ${member.expired}</div>
+        `;
+      }
+
       document.getElementById("hasil").innerHTML = `
         <div class='card' style="text-align:center;">
           <img src="${member.foto}" class="foto-member" onerror="this.src='https://placehold.co/200x200?text=No+Photo'">
           <h3>${member.nama}</h3>
           <div class="badge" style="background:${color}">${text}</div>
           <div class="info-grid">
-            <div class="label">NO ID</div><div>: ${member.noId}</div>
-            <div class="label">NO INDUK</div><div>: ${member.noAnggota}</div>
-            <div class="label">NAMA</div><div>: ${member.nama}</div>
-            <div class="label">ALAMAT</div><div>: ${member.alamat}</div>
-            <div class="label">NIK</div><div>: ${member.nik}</div>
-            <div class="label">BERGABUNG</div><div>: ${member.tglGabung}</div>
-            <div class="label">EXPIRED</div><div>: ${member.expired}</div>
-            <div class="label">CLUB</div><div>: ${member.club}</div>
-            <div class="label">KONTAK</div><div>: ${member.kontakPribadi}</div>
-            <div class="label">K. DARURAT</div><div>: ${member.kontakDarurat}</div>
+            ${detailInfo}
           </div>
           <button onclick='resetTampilan()' class='btn-reset'>CARI LAGI</button>
         </div>`;
@@ -153,7 +184,7 @@
 
     function resetTampilan() {
       document.getElementById("hasil").innerHTML = "";
-      document.getElementById("mainContent").style.display = 'block';
+      document.getElementById('mainContent').style.display = 'block';
       const inputEl = document.getElementById("noId");
       inputEl.value = "";
       inputEl.focus();
