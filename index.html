@@ -40,10 +40,11 @@
     <button onclick="cekPassword()" class="btn-reset" style="max-width:300px;">MASUK</button>
   </div>
 
-  <!-- HALAMAN UTAMA / PENCARIAN -->
+  <!-- HALAMAN UTAMA / PENCARIAN (KHUSUS ADMIN) -->
   <div class="container" id="mainContent" style="display:none;">
     <img src="https://drive.google.com/thumbnail?id=1cw8B7STFAm_2dkC11fe2HEt7juoRodR2&sz=w800" class="logo-img">
     <div id="roleBadge" class="role-info" style="text-align: center;"></div>
+    <p style="text-align:center; color:#94a3b8; font-size:14px; margin-bottom:10px;">Cari Data Member (Admin Mode):</p>
     <input id="noId" type="text" placeholder="Masukkan NO ID, tekan Enter..." autocomplete="off">
   </div>
   
@@ -51,14 +52,18 @@
 
   <script>
     // ==========================================
-    // PENGATURAN HAK AKSES & PASSWORD
+    // PENGATURAN PASSWORD & AKUN MEMBER
     // ==========================================
-    const HAK_AKSES = {
-      "DOA@2026": "ADMIN",    // Password khusus Admin (bisa lihat info lengkap)
-      "MEMBER123": "USER"     // Password khusus Anggota/User Biasa
+    const AKUN_PENGGUNA = {
+      // Format Admin (bisa cari semua data)
+      "DOA@2026": { role: "ADMIN" },
+
+      // Format User / Anggota (ketika login pakai password ini, langsung muncul data miliknya berdasarkan noId)
+      "passbudi01": { role: "USER", noIdTarget: "001" },
+      "passsiti02": { role: "USER", noIdTarget: "002" }
     };
 
-    let currentRole = "";
+    let currentUser = null;
 
     // DATABASE MEMBER
     const databaseMember = [
@@ -103,14 +108,21 @@
       var input = document.getElementById("passInput").value.trim();
       var errorDiv = document.getElementById("errorMsg");
       
-      if (HAK_AKSES.hasOwnProperty(input)) {
-        currentRole = HAK_AKSES[input];
+      if (AKUN_PENGGUNA.hasOwnProperty(input)) {
+        currentUser = AKUN_PENGGUNA[input];
         document.getElementById('loginPage').style.display = 'none';
-        document.getElementById('mainContent').style.display = 'block';
         errorDiv.style.display = 'none';
         
-        document.getElementById("roleBadge").innerHTML = `Hak Akses: [ ${currentRole} ]`;
-        document.getElementById("noId").focus();
+        if (currentUser.role === "ADMIN") {
+          // Jika Admin, tampilkan menu pencarian bebas
+          document.getElementById('mainContent').style.display = 'block';
+          document.getElementById("roleBadge").innerHTML = `Hak Akses: [ ADMIN ]`;
+          document.getElementById("noId").focus();
+        } else {
+          // Jika User biasa, langsung tampilkan datanya sendiri secara otomatis
+          let memberData = databaseMember.find(m => m.noId === currentUser.noIdTarget);
+          tampilkanHasil(memberData);
+        }
       } else {
         errorDiv.style.display = 'block';
         errorDiv.innerHTML = "❌ Password Salah! Coba lagi.";
@@ -133,7 +145,7 @@
     function tampilkanHasil(member) {
       document.getElementById("hasil").innerHTML = ""; 
       if (!member) {
-        document.getElementById("hasil").innerHTML = "<div class='card' style='text-align:center;'>❌ ID TIDAK DITEMUKAN!<br><button onclick='resetTampilan()' class='btn-reset'>CARI LAGI</button></div>";
+        document.getElementById("hasil").innerHTML = "<div class='card' style='text-align:center;'>❌ DATA MEMBER TIDAK DITEMUKAN!<br><button onclick='resetTampilan()' class='btn-reset'>KEMBALI</button></div>";
         return;
       }
       let statusRaw = String(member.status).toUpperCase();
@@ -142,7 +154,8 @@
       let text = isAktiv ? "AKTIF" : "EXPIRED";
 
       let detailInfo = "";
-      if (currentRole === "ADMIN") {
+      if (currentUser && currentUser.role === "ADMIN") {
+        // Info lengkap untuk Admin
         detailInfo = `
           <div class="label">NO ID</div><div>: ${member.noId}</div>
           <div class="label">NO INDUK</div><div>: ${member.noAnggota}</div>
@@ -156,6 +169,7 @@
           <div class="label">K. DARURAT</div><div>: ${member.kontakDarurat}</div>
         `;
       } else {
+        // Info ringkas untuk User mandiri
         detailInfo = `
           <div class="label">NO ID</div><div>: ${member.noId}</div>
           <div class="label">NAMA</div><div>: ${member.nama}</div>
@@ -172,16 +186,24 @@
           <div class="info-grid">
             ${detailInfo}
           </div>
-          <button onclick='resetTampilan()' class='btn-reset'>CARI LAGI</button>
+          <button onclick='resetTampilan()' class='btn-reset'>${currentUser && currentUser.role === 'ADMIN' ? 'CARI LAGI' : 'KELUAR / GANTI AKUN'}</button>
         </div>`;
     }
 
     function resetTampilan() {
       document.getElementById("hasil").innerHTML = "";
-      document.getElementById('mainContent').style.display = 'block';
-      const inputEl = document.getElementById("noId");
-      inputEl.value = "";
-      inputEl.focus();
+      if (currentUser && currentUser.role === "ADMIN") {
+        document.getElementById('mainContent').style.display = 'block';
+        const inputEl = document.getElementById("noId");
+        inputEl.value = "";
+        inputEl.focus();
+      } else {
+        // Jika user biasa, kembalikan ke halaman login
+        document.getElementById('loginPage').style.display = 'flex';
+        document.getElementById('passInput').value = "";
+        document.getElementById('passInput').focus();
+        currentUser = null;
+      }
     }
   </script>
 </body>
