@@ -1,285 +1,49 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>D.O.A Airsoft - Member Verification System</title>
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <style>
-        body {
-            background-color: #0b132b;
-            color: #ffffff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .login-wrapper {
-            height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .login-card {
-            background-color: #1c2541;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            width: 100%;
-            max-width: 400px;
-        }
-        .logo-img {
-            width: 90px;
-            height: 90px;
-            object-fit: contain;
-            margin-bottom: 15px;
-            border-radius: 50%;
-            background-color: #ffffff;
-            padding: 5px;
-        }
-        .dashboard-container, .detail-container {
-            display: none;
-            padding: 20px;
-        }
-        .detail-card {
-            background-color: #1c2541;
-            border-radius: 10px;
-            padding: 25px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
-    </style>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<title>D.O.A AIRSOFT MEMBER</title>
+
+<link rel="stylesheet" href="style.css">
+
 </head>
+
 <body>
 
-    <!-- HALAMAN LOGIN -->
-    <div id="loginSection" class="login-wrapper">
-        <div class="login-card text-center">
-            <div>
-                <img src="https://i.ibb.co/6R3vZ09/logo-placeholder.png" alt="Logo D.O.A" class="logo-img" id="logoDoa" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3135/3135715.png'">
-            </div>
-            <h3 class="font-weight-bold text-info">LOGIN D.O.A</h3>
-            <p class="text-muted small">Member Verification System</p>
-            
-            <div id="loadingStatus" class="text-warning small font-weight-bold mb-3">
-                ⏳ Memuat data sistem 
-            </div>
+<div class="login-box">
 
-            <div id="errorAlert" class="alert alert-danger d-none py-2 text-center" style="font-size: 13px;"></div>
+<img src="assets/logo.png" class="logo">
 
-            <form id="loginForm" class="text-left">
-                <div class="form-group">
-                    <label>Username</label>
-                    <input type="text" id="usernameInput" class="form-control" placeholder="Masukkan Username..." required disabled>
-                </div>
-                <div class="form-group">
-                    <label>Password</label>
-                    <input type="password" id="passwordInput" class="form-control" placeholder="Masukkan Password..." required disabled>
-                </div>
-                <button type="submit" id="loginBtn" class="btn btn-info btn-block font-weight-bold" disabled>MEMUAT...</button>
-            </form>
-        </div>
-    </div>
+<h2>D.O.A AIRSOFT</h2>
 
-    <!-- HALAMAN DASHBOARD (Tabel Utama) -->
-    <div id="dashboardSection" class="dashboard-container">
-        <div class="container">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>Dashboard D.O.A Airsoft</h2>
-                <button onclick="logout()" class="btn btn-outline-danger btn-sm">Logout</button>
-            </div>
-            <div class="card bg-dark text-white p-3 border-secondary">
-                <input type="text" id="searchInput" class="form-control mb-3 bg-secondary text-white border-0" placeholder="Cari nama atau No. ID member..." onkeyup="filterTable()">
-                <div id="tableContainer" class="table-responsive"></div>
-            </div>
-        </div>
-    </div>
+<input
+id="nia"
+placeholder="Nomor Induk Anggota">
 
-    <!-- HALAMAN DETAIL MEMBER -->
-    <div id="detailSection" class="detail-container">
-        <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-md-8 detail-card">
-                    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
-                        <h4 class="text-info m-0">Detail Informasi Member</h4>
-                        <button onclick="backToDashboard()" class="btn btn-secondary btn-sm">Kembali ke Dashboard</button>
-                    </div>
-                    <div id="detailContent" class="row">
-                        <!-- Data Detail Dirender Disini -->
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+<input
+id="password"
+type="password"
+placeholder="Password">
 
-    <!-- JavaScript Logika Sistem -->
-    <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzk4xsdq7dz3uKBEnyXY94pRvNhgas5eMwhfTg1mRuyiseuONd2gLmxi1fMffgvwDHs/exec";
+<button onclick="login()">
 
-        let allMembers = [];
-        let settingList = [];
-        let currentUser = null;
+LOGIN
 
-        async function fetchAppData() {
-            let statusEl = document.getElementById("loadingStatus");
-            let userIn = document.getElementById("usernameInput");
-            let passIn = document.getElementById("passwordInput");
-            let loginBtn = document.getElementById("loginBtn");
+</button>
 
-            try {
-                let response = await fetch(SCRIPT_URL);
-                let data = await response.json();
-                
-                if (data.member && data.setting) {
-                    allMembers = data.member;
-                    settingList = data.setting;
-                } else if (Array.isArray(data)) {
-                    allMembers = data;
-                }
+<div id="status"></div>
 
-                statusEl.innerHTML = "✅ Data Siap!";
-                statusEl.classList.remove("text-warning");
-                statusEl.classList.add("text-success");
-                setTimeout(() => { statusEl.style.display = "none"; }, 1500);
+</div>
 
-                userIn.removeAttribute("disabled");
-                passIn.removeAttribute("disabled");
-                loginBtn.removeAttribute("disabled");
-                loginBtn.innerText = "MASUK";
+<script src="config.js"></script>
 
-            } catch (err) {
-                console.error("Gagal mengambil data:", err);
-                statusEl.innerHTML = "❌ Gagal memuat data dari Spreadsheet!";
-                statusEl.classList.remove("text-warning");
-                statusEl.classList.add("text-danger");
-            }
-        }
+<script src="app.js"></script>
 
-        window.onload = fetchAppData;
-
-        document.getElementById("loginForm").addEventListener("submit", function(e) {
-            e.preventDefault();
-            let u = document.getElementById("usernameInput").value.trim();
-            let p = document.getElementById("passwordInput").value.trim();
-
-            let foundSetting = settingList.find(item => item.username.toLowerCase() === u.toLowerCase() && item.password === p);
-
-            if (foundSetting) {
-                currentUser = foundSetting;
-                document.getElementById("loginSection").style.display = "none";
-                document.getElementById("dashboardSection").style.display = "block";
-                renderDashboard(allMembers);
-            } else {
-                showError("Username atau Password Salah!");
-            }
-        });
-
-        function showError(msg) {
-            let alertBox = document.getElementById("errorAlert");
-            alertBox.innerText = msg;
-            alertBox.classList.remove("d-none");
-        }
-
-        function renderDashboard(dataArray) {
-            let container = document.getElementById("tableContainer");
-            let filteredData = dataArray;
-
-            if (currentUser.role === "USER" && currentUser.noIdTarget) {
-                filteredData = dataArray.filter(m => String(m.noId || m.noid || m.noIdCard).trim() === currentUser.noIdTarget);
-            }
-
-            let html = `<table class="table table-striped table-dark text-white align-middle">
-                <thead>
-                    <tr>
-                        <th>No ID</th>
-                        <th>Nama</th>
-                        <th>Club</th>
-                        <th>Status</th>
-                        <th class="text-center">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>`;
-
-            if (filteredData.length > 0) {
-                filteredData.forEach((m, index) => {
-                    // Cari indeks asli di allMembers agar aman saat diklik
-                    let originalIndex = allMembers.indexOf(m);
-                    html += `<tr>
-                        <td>${m.noId || m.noid || m.noIdCard || '-'}</td>
-                        <td>${m.nama || '-'}</td>
-                        <td>${m.club || '-'}</td>
-                        <td><span class="badge badge-success px-2 py-1">${m.status || '-'}</span></td>
-                        <td class="text-center">
-                            <button onclick="showDetail(${originalIndex})" class="btn btn-info btn-sm font-weight-bold px-3">DETAIL</button>
-                        </td>
-                    </tr>`;
-                });
-            } else {
-                html += `<tr><td colspan="5" class="text-center">Tidak ada data ditemukan.</td></tr>`;
-            }
-
-            html += `</tbody></table>`;
-            container.innerHTML = html;
-        }
-
-        function filterTable() {
-            let keyword = document.getElementById("searchInput").value.toLowerCase();
-            let searched = allMembers.filter(m => {
-                let id = String(m.noId || m.noid || m.noIdCard || "").toLowerCase();
-                let name = String(m.nama || "").toLowerCase();
-                return id.includes(keyword) || name.includes(keyword);
-            });
-            renderDashboard(searched);
-        }
-
-        function showDetail(index) {
-            let m = allMembers[index];
-            if (!m) return;
-
-            document.getElementById("dashboardSection").style.display = "none";
-            document.getElementById("detailSection").style.display = "block";
-
-            // Mapping key fleksibel sesuai header Google Spreadsheet Anda
-            let details = [
-                { label: "No. ID Card", val: m.noIdCard || m.noidCard || m.noId || m.noid || '-' },
-                { label: "No. Induk Anggota", val: m.noIndukAnggota || m.noidAnggota || '-' },
-                { label: "Nama Lengkap", val: m.nama || '-' },
-                { label: "NIK", val: m.nik || '-' },
-                { label: "Alamat", val: m.alamat || '-' },
-                { label: "Tanggal Bergabung", val: m.tanggalBergabung || m.tglBergabung || '-' },
-                { label: "Expired", val: m.expired || m.masa Berlaku || '-' },
-                { label: "Club", val: m.club || '-' },
-                { label: "Status", val: m.status || '-' },
-                { label: "Kontak Pribadi", val: m.kontakPribadi || m.telepon || m.hp || '-' },
-                { label: "Nama Kontak Darurat", val: m.namaKontakDarurat || m.kontakDaruratNama || '-' },
-                { label: "Kontak Darurat", val: m.kontakDarurat || m.telpDarurat || '-' }
-            ];
-
-            let html = "";
-            details.forEach(item => {
-                html += `
-                    <div class="col-md-6 mb-3">
-                        <div class="p-2 border border-secondary rounded bg-dark">
-                            <small class="text-muted d-block">${item.label}</small>
-                            <span class="font-weight-bold text-light" style="font-size: 15px;">${item.val}</span>
-                        </div>
-                    </div>
-                `;
-            });
-
-            document.getElementById("detailContent").innerHTML = html;
-        }
-
-        function backToDashboard() {
-            document.getElementById("detailSection").style.display = "none";
-            document.getElementById("dashboardSection").style.display = "block";
-        }
-
-        function logout() {
-            currentUser = null;
-            document.getElementById("loginSection").style.display = "flex";
-            document.getElementById("dashboardSection").style.display = "none";
-            document.getElementById("detailSection").style.display = "none";
-            document.getElementById("loginForm").reset();
-            document.getElementById("errorAlert").classList.add("d-none");
-        }
-    </script>
 </body>
+
 </html>
