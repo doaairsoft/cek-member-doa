@@ -1,17 +1,38 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D.O.A AIRSOFT MEMBER</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
 <body>
 
 <div class="login-box">
 
-<img src="assets/logo.png" class="logo" alt="Logo D.O.A Airsoft">
+    <img src="assets/logo.png" class="logo" alt="Logo D.O.A">
 
-<h2>D.O.A AIRSOFT MEMBER</h2>
+    <h2>D.O.A AIRSOFT MEMBER</h2>
 
-<input type="text" placeholder="Nomor Induk Anggota">
+    <input
+        type="text"
+        id="username"
+        placeholder="Nomor Induk Anggota">
 
-<input type="password" placeholder="Password">
+    <input
+        type="password"
+        id="password"
+        placeholder="Password">
 
-<button>LOGIN</button>
+    <button onclick="login()">
+        LOGIN
+    </button>
 
 </div>
 
+<script src="app.js"></script>
+
 </body>
+</html>
