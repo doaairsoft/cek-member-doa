@@ -6,15 +6,15 @@
 }
 
 body{
-    background:url("cek-member-doa/assets
-/background.png") center center/cover no-repeat fixed;
+    margin:0;
     min-height:100vh;
 
-    display:flex;
-    justify-content:center;
-    align-items:center;
+    background-image: url("assets/background.png");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
 }
-
 .login-box{
     width:380px;
     background:rgba(0,0,0,.75);
