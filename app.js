@@ -1,13 +1,38 @@
-function login(){
+async function login(){
 
     const username = document.getElementById("username").value;
     const password = document.getElementById("password").value;
 
-    if(username==="" || password===""){
-        alert("Lengkapi data terlebih dahulu.");
+    if(username=="" || password==""){
+        alert("Lengkapi data.");
         return;
     }
 
-    alert("Login berhasil (sementara).");
+    const response = await fetch(API_URL,{
+        method:"POST",
+        body:JSON.stringify({
+            action:"login",
+            username:username,
+            password:password
+        })
+    });
+
+    const data = await response.json();
+
+    if(data.status){
+
+        localStorage.setItem("user",JSON.stringify(data));
+
+        if(data.role=="ADMIN"){
+            window.location="dashboard.html";
+        }else{
+            window.location="member.html";
+        }
+
+    }else{
+
+        alert("Username atau Password salah");
+
+    }
 
 }
