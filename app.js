@@ -1,37 +1,51 @@
-async function login(){
+async function login() {
 
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value.trim();
 
-    if(username=="" || password==""){
+    if (username === "" || password === "") {
         alert("Lengkapi data.");
         return;
     }
 
-    const response = await fetch(API_URL,{
-        method:"POST",
-        body:JSON.stringify({
-            action:"login",
-            username:username,
-            password:password
-        })
-    });
+    try {
 
-    const data = await response.json();
+        const response = await fetch(CONFIG.API_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "text/plain;charset=utf-8"
+            },
+            body: JSON.stringify({
+                action: "login",
+                username: username,
+                password: password
+            })
+        });
 
-    if(data.status){
+        const data = await response.json();
 
-        localStorage.setItem("user",JSON.stringify(data));
+        console.log(data);
 
-        if(data.role=="ADMIN"){
-            window.location="dashboard.html";
-        }else{
-            window.location="member.html";
+        if (data.status) {
+
+            localStorage.setItem("user", JSON.stringify(data));
+
+            if (data.role === "ADMIN") {
+                window.location.href = "dashboard.html";
+            } else {
+                window.location.href = "member.html";
+            }
+
+        } else {
+
+            alert(data.message || "Username atau Password salah");
+
         }
 
-    }else{
+    } catch (err) {
 
-        alert("Username atau Password salah");
+        console.error(err);
+        alert("Tidak dapat terhubung ke server.");
 
     }
 
