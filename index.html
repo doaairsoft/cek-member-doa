@@ -1,38 +1,38 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>D.O.A AIRSOFT MEMBER</title>
+async function login(){
 
-    <link rel="stylesheet" href="style.css">
-</head>
+    const username = document.getElementById("username").value;
+    const password = document.getElementById("password").value;
 
-<body>
+    if(username=="" || password==""){
+        alert("Lengkapi data.");
+        return;
+    }
 
-<div class="login-box">
+    const response = await fetch(API_URL,{
+        method:"POST",
+        body:JSON.stringify({
+            action:"login",
+            username:username,
+            password:password
+        })
+    });
 
-    <img src="assets/logo.png" class="logo" alt="Logo D.O.A">
+    const data = await response.json();
 
-    <h2>D.O.A AIRSOFT MEMBER</h2>
+    if(data.status){
 
-    <input
-        type="text"
-        id="username"
-        placeholder="Nomor Induk Anggota">
+        localStorage.setItem("user",JSON.stringify(data));
 
-    <input
-        type="password"
-        id="password"
-        placeholder="Password">
+        if(data.role=="ADMIN"){
+            window.location="dashboard.html";
+        }else{
+            window.location="member.html";
+        }
 
-    <button onclick="login()">
-        LOGIN
-    </button>
+    }else{
 
-</div>
+        alert("Username atau Password salah");
 
-<script src="app.js"></script>
+    }
 
-</body>
-</html>
+}
